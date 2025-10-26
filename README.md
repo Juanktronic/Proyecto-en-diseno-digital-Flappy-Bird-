@@ -1,2 +1,2 @@
-# Proyecto-en-dise-o-digital-Flappy-Bird-
-Proyecto que busca hacer una adaptación del juego Flappy Bird en diseño digital usando FPGA y VHDL, se busca poder implementar el juego en una pantalla VGA.
+# Proyecto-en-diseño-digital-Flappy-Bird-
+Este proyecto es realizado para la asignatura Diseño de Sistemas Digitales en la Pontificia Universidad Javeriana, por Juan Mojica, Sara Guevara y Eliana Díaz. Consiste en una adaptación del juego Flappy Bird hecha completamente en VHDL para la tarjeta de desarrollo TERASIC DE0 con el chip de ALTERA Cylone III EP3C16F484, se busca haccer un diseño implementando bloques.
