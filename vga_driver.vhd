@@ -6,21 +6,22 @@ ENTITY vga_driver IS
   PORT(
     clock       : IN  std_logic;
     row, column : OUT std_logic_vector(9 DOWNTO 0);
+	 frame_flag  : OUT std_logic;
     H, V        : OUT std_logic
   );
 END ENTITY;
 
 ARCHITECTURE behaviour OF vga_driver IS
-  CONSTANT b : natural := 93;    --Retrace
-  CONSTANT c : natural := 45;    --Back Porch
+  CONSTANT b : natural := 96;    --Retrace
+  CONSTANT c : natural := 48;    --Back Porch
   CONSTANT d : natural := 640;   --Screen
-  CONSTANT e : natural := 22;    --Front Porch
+  CONSTANT e : natural := 16;    --Front Porch
   CONSTANT a : natural := b + c + d + e; --=800
   CONSTANT p : natural := 2;     --Back Porch
-  CONSTANT q : natural := 32;    --Retrace
+  CONSTANT q : natural := 33;    --Retrace
   CONSTANT r : natural := 480;   --Screen
-  CONSTANT s : natural := 11;    --Front Porch
-  CONSTANT o : natural := p + q + r + s; --=800 
+  CONSTANT s : natural := 10;    --Front Porch
+  CONSTANT o : natural := p + q + r + s; --=525
 
   -- Señales de los contadores
   SIGNAL h_cnt_slv : std_logic_vector(9 DOWNTO 0);
@@ -40,8 +41,8 @@ BEGIN
   u_pll : ENTITY work.PLL_25_175Mhz
     PORT MAP (
       areset => '0',
-      inclk0 => clock,     -- reloj base (p.ej. 50 MHz)
-      c0     => PLLclk    -- reloj de píxel hacia el driver
+      inclk0 => clock,     
+      c0     => PLLclk    
     );
 
   u_h : ENTITY work.contador
@@ -73,5 +74,7 @@ BEGIN
 
   row    <= std_logic_vector(v_cnt_u);
   column <= std_logic_vector(h_cnt_u);
+  
+  frame_flag <= v_tick;
   
 END ARCHITECTURE;

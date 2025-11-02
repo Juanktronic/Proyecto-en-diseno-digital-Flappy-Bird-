@@ -1,0 +1,173 @@
+-- Copyright (C) 1991-2013 Altera Corporation
+-- Your use of Altera Corporation's design tools, logic functions 
+-- and other software and tools, and its AMPP partner logic 
+-- functions, and any output files from any of the foregoing 
+-- (including device programming or simulation files), and any 
+-- associated documentation or information are expressly subject 
+-- to the terms and conditions of the Altera Program License 
+-- Subscription Agreement, Altera MegaCore Function License 
+-- Agreement, or other applicable license agreement, including, 
+-- without limitation, that your use is for the sole purpose of 
+-- programming logic devices manufactured by Altera and sold by 
+-- Altera or its authorized distributors.  Please refer to the 
+-- applicable agreement for further details.
+
+-- Quartus II generated Memory Initialization File (.mif)
+
+WIDTH=12;
+DEPTH=816;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+	[000..00B]  :   BBB;
+	[00C..017]  :   000;
+	[018..02D]  :   BBB;
+	[02E..039]  :   000;
+	[03A..04B]  :   BBB;
+	[04C..04F]  :   000;
+	[050..057]  :   FF0;
+	[058..059]  :   000;
+	[05A..05B]  :   FFF;
+	[05C..05D]  :   000;
+	[05E..06D]  :   BBB;
+	[06E..071]  :   000;
+	[072..079]  :   FF0;
+	[07A..07B]  :   000;
+	[07C..07D]  :   FFF;
+	[07E..07F]  :   000;
+	[080..08D]  :   BBB;
+	[08E..08F]  :   000;
+	[090..099]  :   FF0;
+	[09A..09B]  :   000;
+	[09C..0A1]  :   FFF;
+	[0A2..0A3]  :   000;
+	[0A4..0AF]  :   BBB;
+	[0B0..0B1]  :   000;
+	[0B2..0BB]  :   FF0;
+	[0BC..0BD]  :   000;
+	[0BE..0C3]  :   FFF;
+	[0C4..0C5]  :   000;
+	[0C6..0CD]  :   BBB;
+	[0CE..0D5]  :   000;
+	[0D6..0DD]  :   FF0;
+	[0DE..0DF]  :   000;
+	[0E0..0E3]  :   FFF;
+	[0E4..0E5]  :   000;
+	[0E6..0E7]  :   FFF;
+	[0E8..0E9]  :   000;
+	[0EA..0EF]  :   BBB;
+	[0F0..0F7]  :   000;
+	[0F8..0FF]  :   FF0;
+	[100..101]  :   000;
+	[102..105]  :   FFF;
+	[106..107]  :   000;
+	[108..109]  :   FFF;
+	[10A..10B]  :   000;
+	[10C..10F]  :   BBB;
+	[110..111]  :   000;
+	[112..119]  :   FFF;
+	[11A..11B]  :   000;
+	[11C..121]  :   FF0;
+	[122..123]  :   000;
+	[124..127]  :   FFF;
+	[128..129]  :   000;
+	[12A..12B]  :   FFF;
+	[12C..12D]  :   000;
+	[12E..131]  :   BBB;
+	[132..133]  :   000;
+	[134..13B]  :   FFF;
+	[13C..13D]  :   000;
+	[13E..143]  :   FF0;
+	[144..145]  :   000;
+	[146..149]  :   FFF;
+	[14A..14B]  :   000;
+	[14C..14D]  :   FFF;
+	[14E..14F]  :   000;
+	[150..153]  :   BBB;
+	[154..155]  :   000;
+	[156..15F]  :   FFF;
+	[160..161]  :   000;
+	[162..167]  :   FF0;
+	[168..169]  :   000;
+	[16A..16F]  :   FFF;
+	[170..171]  :   000;
+	[172..175]  :   BBB;
+	[176..177]  :   000;
+	[178..181]  :   FFF;
+	[182..183]  :   000;
+	[184..189]  :   FF0;
+	[18A..18B]  :   000;
+	[18C..191]  :   FFF;
+	[192..193]  :   000;
+	[194..197]  :   BBB;
+	[198..199]  :   000;
+	[19A..19B]  :   FF0;
+	[19C..1A1]  :   FFF;
+	[1A2..1A3]  :   FF0;
+	[1A4..1A5]  :   000;
+	[1A6..1AD]  :   FF0;
+	[1AE..1B7]  :   000;
+	[1B8..1B9]  :   BBB;
+	[1BA..1BB]  :   000;
+	[1BC..1BD]  :   FF0;
+	[1BE..1C3]  :   FFF;
+	[1C4..1C5]  :   FF0;
+	[1C6..1C7]  :   000;
+	[1C8..1CF]  :   FF0;
+	[1D0..1D9]  :   000;
+	[1DA..1DD]  :   BBB;
+	[1DE..1DF]  :   000;
+	[1E0..1E5]  :   FF0;
+	[1E6..1E7]  :   000;
+	[1E8..1EF]  :   FF0;
+	[1F0..1F1]  :   000;
+	[1F2..1FB]  :   F70;
+	[1FC..1FD]  :   000;
+	[1FE..1FF]  :   BBB;
+	[200..201]  :   000;
+	[202..207]  :   FF0;
+	[208..209]  :   000;
+	[20A..211]  :   FF0;
+	[212..213]  :   000;
+	[214..21D]  :   F70;
+	[21E..21F]  :   000;
+	[220..223]  :   BBB;
+	[224..229]  :   000;
+	[22A..231]  :   FC0;
+	[232..233]  :   000;
+	[234..235]  :   F70;
+	[236..23F]  :   000;
+	[240..245]  :   BBB;
+	[246..24B]  :   000;
+	[24C..253]  :   FC0;
+	[254..255]  :   000;
+	[256..257]  :   F70;
+	[258..261]  :   000;
+	[262..26B]  :   BBB;
+	[26C..26D]  :   000;
+	[26E..277]  :   FC0;
+	[278..279]  :   000;
+	[27A..281]  :   F70;
+	[282..283]  :   000;
+	[284..28D]  :   BBB;
+	[28E..28F]  :   000;
+	[290..299]  :   FC0;
+	[29A..29B]  :   000;
+	[29C..2A3]  :   F70;
+	[2A4..2A5]  :   000;
+	[2A6..2B1]  :   BBB;
+	[2B2..2B5]  :   000;
+	[2B6..2BD]  :   FC0;
+	[2BE..2C5]  :   000;
+	[2C6..2D3]  :   BBB;
+	[2D4..2D7]  :   000;
+	[2D8..2DF]  :   FC0;
+	[2E0..2E7]  :   000;
+	[2E8..2F9]  :   BBB;
+	[2FA..301]  :   000;
+	[302..31B]  :   BBB;
+	[31C..323]  :   000;
+	[324..32F]  :   BBB;
+END;
