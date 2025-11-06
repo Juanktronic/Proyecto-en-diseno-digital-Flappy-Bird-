@@ -18,7 +18,7 @@ ARCHITECTURE rtl OF pipe_sprite IS
 
   CONSTANT IMG_W      : integer := 56;
   CONSTANT IMG_H      : integer := 21;
-  CONSTANT GAP_HEIGHT : integer := 113;
+  CONSTANT GAP_HEIGHT : integer := 132;	
   CONSTANT SCREEN_H   : integer := 480;
 
   -- addr needs to index up to IMG_W*IMG_H - 1 = 1791 -> 11 bits
