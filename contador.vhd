@@ -8,9 +8,11 @@ ENTITY contador IS
   );
   PORT (
     clk      : IN  std_logic;
-    max      : IN  std_logic_vector(n-1 DOWNTO 0);  -- valor máximo (inclusive)
-    max_tick : OUT std_logic;                       -- pulso 1 ciclo al llegar a max
-    counter  : OUT std_logic_vector(n-1 DOWNTO 0)   -- cuenta actual
+    en       : IN  std_logic;
+	   rst      : IN  std_logic := '0';
+    max      : IN  std_logic_vector(n-1 DOWNTO 0);
+    max_tick : OUT std_logic;
+    counter  : OUT std_logic_vector(n-1 DOWNTO 0)
   );
 END ENTITY;
 
@@ -21,14 +23,23 @@ ARCHITECTURE rtl OF contador IS
 BEGIN
   max_u <= unsigned(max);
 
-  PROCESS (clk)
+PROCESS (clk)
   BEGIN
     IF rising_edge(clk) THEN
-      IF count_s = max_u THEN
-        count_s      <= (OTHERS => '0'); -- reinicio en 0 al llegar a max
-        max_tick_reg <= '1';             -- pulso de 1 ciclo
+      IF rst = '1' THEN
+        count_s      <= (OTHERS => '0');
+        max_tick_reg <= '0';
+
+      ELSIF en = '1' THEN
+        IF count_s = max_u THEN
+          count_s      <= (OTHERS => '0');
+          max_tick_reg <= '1';
+        ELSE
+          count_s      <= count_s + 1;
+          max_tick_reg <= '0';
+        END IF;
+
       ELSE
-        count_s      <= count_s + 1;
         max_tick_reg <= '0';
       END IF;
     END IF;
