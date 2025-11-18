@@ -15,7 +15,7 @@ END ENTITY;
 ARCHITECTURE rtl OF bird_rom IS
 
     CONSTANT DATA_WIDTH : integer := 12;
-    CONSTANT ADDR_WIDTH : integer := 16;
+    CONSTANT ADDR_WIDTH : integer := 12;
 
     SIGNAL data_reg : STD_LOGIC_VECTOR(DATA_WIDTH-1 DOWNTO 0);
 

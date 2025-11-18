@@ -1,96 +1,80 @@
+
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
 ENTITY pipe_sprite IS
   PORT(
-    clk         : IN  std_logic;
-    row         : IN  std_logic_vector(9 DOWNTO 0);
-    column      : IN  std_logic_vector(9 DOWNTO 0);
-    x_pos       : IN  std_logic_vector(9 DOWNTO 0);
-    center      : IN  std_logic_vector(9 DOWNTO 0);
-    pixel_data  : OUT std_logic_vector(11 DOWNTO 0);
-    visible     : OUT std_logic
+    clk        : IN std_logic;
+    row        : IN std_logic_vector(9 DOWNTO 0);
+    column     : IN std_logic_vector(9 DOWNTO 0);
+    x_pos      : IN std_logic_vector(10 DOWNTO 0);
+    center     : IN std_logic_vector(9 DOWNTO 0);
+    pixel_data : OUT std_logic_vector(11 DOWNTO 0);
+    visible    : OUT std_logic
   );
 END ENTITY;
 
 ARCHITECTURE rtl OF pipe_sprite IS
-
   CONSTANT IMG_W      : integer := 56;
   CONSTANT IMG_H      : integer := 21;
-  CONSTANT GAP_HEIGHT : integer := 132;	
-  CONSTANT SCREEN_H   : integer := 480;
+  CONSTANT GAP_HEIGHT : integer := 132;
+  CONSTANT TRANSP     : std_logic_vector(11 DOWNTO 0) := x"BBB";
 
-  -- addr needs to index up to IMG_W*IMG_H - 1 = 1791 -> 11 bits
-  SIGNAL addr    : std_logic_vector(11 DOWNTO 0); -- <-- 11 bits
+  -- NUEVO: límite inferior para no dibujar los últimos 60 px
+  CONSTANT SCREEN_H       : integer := 480;  -- ajusta si tu altura no es 480
+  CONSTANT BOTTOM_MARGIN  : integer := 60;
+  CONSTANT BOTTOM_LIMIT   : integer := SCREEN_H - BOTTOM_MARGIN;
+
+  SIGNAL addr    : std_logic_vector(11 DOWNTO 0);
   SIGNAL color   : std_logic_vector(11 DOWNTO 0);
-  SIGNAL show_px : std_logic := '0';
 
-  SIGNAL x_int, y_int, x0_int, c_int : integer;
+  SIGNAL x_i, y_i, x0_i, c_i      : integer;
+  SIGNAL gap_top_i, gap_bot_i     : integer;
+  SIGNAL within_x                 : std_logic;
+  SIGNAL top_zone, bot_zone       : std_logic;
+  SIGNAL inside_any               : std_logic;
+  SIGNAL dx_i                     : integer;
 
+  SIGNAL y_top_raw, y_bot_raw     : integer;
+  SIGNAL y_top_clamp, y_bot_clamp : integer;
+  SIGNAL y_sel                    : integer;
+
+  SIGNAL index_i                  : integer;
 BEGIN
+  x_i  <= to_integer(unsigned(column));
+  y_i  <= to_integer(unsigned(row));
+  x0_i <= to_integer(signed(x_pos)); 
+  c_i  <= to_integer(unsigned(center));
 
-  -- Convert coordinates once
-  x_int  <= to_integer(unsigned(column));
-  y_int  <= to_integer(unsigned(row));
-  x0_int <= to_integer(unsigned(x_pos));
-  c_int  <= to_integer(unsigned(center));
+  gap_top_i <= c_i - (GAP_HEIGHT/2);
+  gap_bot_i <= c_i + (GAP_HEIGHT/2);
 
-  -----------------------------------------------------------------
-  -- Address generation (TOP reflected by scanning ROM upward,
-  -- BOTTOM normal, plus body extension by clamping)
-  -----------------------------------------------------------------
-  process(x_int, y_int, x0_int, c_int)
-    variable y_img : integer;
-    variable index : integer;
-    variable gap_top : integer;
-    variable gap_bottom : integer;
-  begin
-    addr    <= (others => '0');
-    show_px <= '0';
-    index   := 0;
+  within_x  <= '1' WHEN (x_i >= x0_i) AND (x_i < x0_i + IMG_W) ELSE '0';
+  top_zone  <= '1' WHEN (within_x = '1') AND (y_i <  gap_top_i) ELSE '0';
+  bot_zone  <= '1' WHEN (within_x = '1') AND (y_i >= gap_bot_i) AND (y_i < BOTTOM_LIMIT) ELSE '0';
+  inside_any<= '1' WHEN (top_zone = '1') OR (bot_zone = '1') ELSE '0';
 
-    gap_top := c_int - (GAP_HEIGHT / 2);
-    gap_bottom := c_int + (GAP_HEIGHT / 2);
+  dx_i <= x_i - x0_i;
 
-    if (x_int >= x0_int) and (x_int < x0_int + IMG_W) then
+  y_top_raw   <= (gap_top_i - 1) - y_i;
+  y_top_clamp <= 0                WHEN y_top_raw < 0 ELSE
+                 (IMG_H - 1)      WHEN y_top_raw >= IMG_H ELSE
+                 y_top_raw;
 
-      -- TOP PIPE (we scan ROM rows upward from the gap; no inversion)
-      if (y_int < gap_top) then
-        -- distance from the pixel to the row just above the gap
-        y_img := (gap_top - 1) - y_int;  -- 0 = pixel immediately above gap
+  y_bot_raw   <= y_i - gap_bot_i;
+  y_bot_clamp <= 0                WHEN y_bot_raw < 0 ELSE
+                 (IMG_H - 1)      WHEN y_bot_raw >= IMG_H ELSE
+                 y_bot_raw;
 
-        -- clamp to ROM height to extend body (repeat last ROM row)
-        if y_img < 0 then
-          y_img := 0;
-        elsif y_img >= IMG_H then
-          y_img := IMG_H - 1;
-        end if;
+  y_sel <= y_top_clamp WHEN top_zone = '1' ELSE
+           y_bot_clamp WHEN bot_zone = '1' ELSE
+           0;
 
-        -- row-major index: row * IMG_W + column_offset
-        index := y_img * IMG_W + (x_int - x0_int);
-        show_px <= '1';
+  index_i <= y_sel * IMG_W + dx_i WHEN inside_any = '1' ELSE 0;
 
-      -- BOTTOM PIPE (normal orientation)
-      elsif (y_int >= gap_bottom) then
-        y_img := y_int - gap_bottom; -- 0 = pixel immediately below gap
+  addr <= std_logic_vector(to_unsigned(index_i, addr'length));
 
-        if y_img >= IMG_H then
-          y_img := IMG_H - 1;
-        end if;
-
-        index := y_img * IMG_W + (x_int - x0_int);
-        show_px <= '1';
-      end if;
-
-      -- write address with correct width
-      addr <= std_logic_vector(to_unsigned(index, addr'length));
-    end if;
-  end process;
-
-  -----------------------------------------------------------------
-  -- ROM instance (pipe head facing down)
-  -----------------------------------------------------------------
   u_rom : ENTITY work.pipe_rom
     PORT MAP (
       clk    => clk,
@@ -98,18 +82,10 @@ BEGIN
       r_data => color
     );
 
-  -----------------------------------------------------------------
-  -- Visibility + transparency
-  -----------------------------------------------------------------
-  process(show_px, color)
-  begin
-    if (show_px = '1') and (color /= x"BBB") then
-      visible <= '1';
-    else
-      visible <= '0';
-    end if;
-    pixel_data <= color;
-  end process;
+  pixel_data <= color;
 
+  visible <= '1' WHEN (inside_any = '1') AND (color /= TRANSP)
+             ELSE '0';
 END ARCHITECTURE;
+
 

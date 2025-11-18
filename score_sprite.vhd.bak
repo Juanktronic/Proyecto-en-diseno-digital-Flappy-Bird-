@@ -1,0 +1,129 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.numeric_std.ALL;
+
+ENTITY score_sprite IS
+  GENERIC (
+    DIG_W       : integer := 34;
+    DIG_H       : integer := 24;
+    DIG_SPACING : integer := 4;
+    TRIGGER_X   : integer := 100;
+    PIPE_WIDTH  : integer := 56
+  );
+  PORT(
+    clk         : IN  std_logic;
+    frame_tick  : IN  std_logic;
+
+    row         : IN  std_logic_vector(9 DOWNTO 0);
+    column      : IN  std_logic_vector(9 DOWNTO 0);
+
+    x_pos       : IN  std_logic_vector(9 DOWNTO 0);
+    y_pos       : IN  std_logic_vector(9 DOWNTO 0);
+
+    pipe_x      : IN  std_logic_vector(10 DOWNTO 0); -- signed
+
+    pixel_data  : OUT std_logic_vector(11 DOWNTO 0);
+    visible     : OUT std_logic
+  );
+END ENTITY;
+
+ARCHITECTURE rtl OF score_sprite IS
+  CONSTANT TRANSP : std_logic_vector(11 DOWNTO 0) := x"BBB";
+
+  SIGNAL x_i, y_i          : integer;
+  SIGNAL x0_i, y0_i        : integer;
+  SIGNAL xr_i              : integer;
+
+  SIGNAL inside_L, inside_R, inside_any : std_logic;
+  SIGNAL dx_i, dy_i                      : integer;
+  SIGNAL addr_i                          : integer;
+  SIGNAL addr                            : std_logic_vector(11 DOWNTO 0);
+
+  SIGNAL tens_i, ones_i, sel_digit : integer range 0 to 9;
+
+  SIGNAL c0,c1,c2,c3,c4,c5,c6,c7,c8,c9 : std_logic_vector(11 DOWNTO 0);
+  SIGNAL color_sel : std_logic_vector(11 DOWNTO 0);
+
+  SIGNAL pipe_x_i    : integer;
+  SIGNAL prev_above  : std_logic := '0';
+  SIGNAL ft_prev     : std_logic := '0';
+
+  SIGNAL score_reg   : unsigned(6 DOWNTO 0) := (OTHERS => '0'); -- 0..99
+  SIGNAL score_next  : unsigned(6 DOWNTO 0);
+BEGIN
+  x_i  <= to_integer(unsigned(column));
+  y_i  <= to_integer(unsigned(row));
+  x0_i <= to_integer(unsigned(x_pos));
+  y0_i <= to_integer(unsigned(y_pos));
+
+  xr_i <= x0_i + DIG_W + DIG_SPACING;
+
+  inside_L <= '1' WHEN (x_i >= x0_i) AND (x_i < x0_i + DIG_W) AND
+                       (y_i >= y0_i) AND (y_i < y0_i + DIG_H) ELSE '0';
+  inside_R <= '1' WHEN (x_i >= xr_i) AND (x_i < xr_i + DIG_W) AND
+                       (y_i >= y0_i) AND (y_i < y0_i + DIG_H) ELSE '0';
+  inside_any <= '1' WHEN (inside_L = '1') OR (inside_R = '1') ELSE '0';
+
+  tens_i <= to_integer(score_reg) / 10;
+  ones_i <= to_integer(score_reg) - (tens_i * 10);
+
+  dx_i <= (x_i - x0_i) WHEN inside_L = '1' ELSE
+          (x_i - xr_i) WHEN inside_R = '1' ELSE 0;
+  dy_i <= (y_i - y0_i);
+
+  addr_i <= (dy_i * DIG_W) + dx_i;
+  addr   <= std_logic_vector(to_unsigned(addr_i, 12));
+
+  sel_digit <= tens_i WHEN inside_L = '1' ELSE
+               ones_i WHEN inside_R = '1' ELSE 0;
+
+  u0 : ENTITY work.rom_Zero  PORT MAP(clk=>clk, r_addr=>addr, r_data=>c0);
+  u1 : ENTITY work.rom_One   PORT MAP(clk=>clk, r_addr=>addr, r_data=>c1);
+  u2 : ENTITY work.rom_Two   PORT MAP(clk=>clk, r_addr=>addr, r_data=>c2);
+  u3 : ENTITY work.rom_Three PORT MAP(clk=>clk, r_addr=>addr, r_data=>c3);
+  u4 : ENTITY work.rom_Four  PORT MAP(clk=>clk, r_addr=>addr, r_data=>c4);
+  u5 : ENTITY work.rom_Five  PORT MAP(clk=>clk, r_addr=>addr, r_data=>c5);
+  u6 : ENTITY work.rom_Six   PORT MAP(clk=>clk, r_addr=>addr, r_data=>c6);
+  u7 : ENTITY work.rom_Seven PORT MAP(clk=>clk, r_addr=>addr, r_data=>c7);
+  u8 : ENTITY work.rom_Eight PORT MAP(clk=>clk, r_addr=>addr, r_data=>c8);
+  u9 : ENTITY work.rom_Nine  PORT MAP(clk=>clk, r_addr=>addr, r_data=>c9);
+
+  WITH sel_digit SELECT
+    color_sel <= c0 WHEN 0,
+                 c1 WHEN 1,
+                 c2 WHEN 2,
+                 c3 WHEN 3,
+                 c4 WHEN 4,
+                 c5 WHEN 5,
+                 c6 WHEN 6,
+                 c7 WHEN 7,
+                 c8 WHEN 8,
+                 c9 WHEN 9,
+                 (OTHERS => '0') WHEN OTHERS;
+
+  pixel_data <= color_sel;
+  visible    <= '1' WHEN (inside_any = '1') AND (color_sel /= TRANSP) ELSE '0';
+
+  pipe_x_i <= to_integer(signed(pipe_x));
+
+  score_next <= (OTHERS=>'0') WHEN (score_reg = to_unsigned(99,7)) ELSE score_reg + 1;
+
+  PROCESS(clk)
+    VARIABLE curr_above : std_logic;
+    VARIABLE ft_rise    : std_logic;
+  BEGIN
+    IF rising_edge(clk) THEN
+      ft_rise := '1' WHEN (frame_tick = '1' AND ft_prev = '0') ELSE '0';
+
+      IF ft_rise = '1' THEN
+        curr_above := '1' WHEN (pipe_x_i + PIPE_WIDTH) > TRIGGER_X ELSE '0';
+        IF (prev_above = '1' AND curr_above = '0') THEN
+          score_reg <= score_next;
+        END IF;
+        prev_above := curr_above;
+      END IF;
+
+      ft_prev <= frame_tick;
+    END IF;
+  END PROCESS;
+END ARCHITECTURE;

@@ -2,88 +2,71 @@ LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 USE ieee.numeric_std.ALL;
 
--- ===========================================================
--- Sprite del pájaro (32x32)
--- Lee los datos de bird_rom (inicializada con bird.mif)
--- y genera la imagen en la posición (x_pos, y_pos)
--- ===========================================================
-
 ENTITY bird_sprite IS
   PORT(
     clk         : IN  std_logic;
+    enable      : IN  std_logic; 
     row         : IN  std_logic_vector(9 DOWNTO 0);
     column      : IN  std_logic_vector(9 DOWNTO 0);
-    x_pos       : IN  std_logic_vector(9 DOWNTO 0);  -- posición X (esquina izquierda)
-    y_pos       : IN  std_logic_vector(9 DOWNTO 0);  -- posición Y (esquina superior)
-    pixel_data  : OUT std_logic_vector(11 DOWNTO 0); -- salida de color RGB (12 bits)
-    visible     : OUT std_logic                      -- indica si el píxel pertenece al sprite
+    x_pos       : IN  std_logic_vector(9 DOWNTO 0);
+    y_pos       : IN  std_logic_vector(9 DOWNTO 0);
+    pixel_data  : OUT std_logic_vector(11 DOWNTO 0);
+    visible     : OUT std_logic
   );
 END ENTITY;
---------------------------------------------------------------
 
 ARCHITECTURE rtl OF bird_sprite IS
-
-  -- Parámetros de la imagen
-  CONSTANT IMG_W : integer := 34;
-  CONSTANT IMG_H : integer := 24;
-
-  -- Señales internas
-  SIGNAL addr  : std_logic_vector(9 DOWNTO 0);
-  SIGNAL color : std_logic_vector(11 DOWNTO 0);
-
+  CONSTANT IMG_W  : integer := 34;
+  CONSTANT IMG_H  : integer := 24;
+  CONSTANT TRANSP : std_logic_vector(11 DOWNTO 0) := x"BBB";
+  
+  SIGNAL addr      : std_logic_vector(9 DOWNTO 0);
+  SIGNAL color_rom : std_logic_vector(11 DOWNTO 0);
+  
+  -- Señales intermedias
+  SIGNAL x, y, x0, y0 : unsigned(9 DOWNTO 0);
+  SIGNAL dx, dy : unsigned(9 DOWNTO 0);
+  SIGNAL inside : std_logic;
+  SIGNAL index : integer;
+  
 BEGIN
 
-  -- Proceso para calcular la dirección del píxel dentro de la ROM
-  process(row, column, x_pos, y_pos)
-    variable x, y, x0, y0 : integer;
-    variable index : integer;
-  begin
-    x  := to_integer(unsigned(column));
-    y  := to_integer(unsigned(row));
-    x0 := to_integer(unsigned(x_pos));
-    y0 := to_integer(unsigned(y_pos));
-
-    if (x >= x0) and (x < x0 + IMG_W) and
-       (y >= y0) and (y < y0 + IMG_H) then
-      -- Dentro del área del sprite
-      index := (y - y0) * IMG_W + (x - x0);
-      addr   <= std_logic_vector(to_unsigned(index, 10));
-    else
-      -- Fuera del sprite
-      addr   <= (others => '0');
-    end if;
-  end process;
-
-  -- ROM con los datos del sprite
+  --------------------------------------------------------------------
+  -- ASIGNACIONES CONCURRENTES (igual que antes)
+  --------------------------------------------------------------------
+  x  <= unsigned(column);
+  y  <= unsigned(row);
+  x0 <= unsigned(x_pos);
+  y0 <= unsigned(y_pos);
+  
+  inside <= '1' WHEN (x >= x0) AND (x < x0 + IMG_W) AND
+                     (y >= y0) AND (y < y0 + IMG_H)
+            ELSE '0';
+  
+  dx <= x - x0;
+  dy <= y - y0;
+  
+  index <= to_integer(dy) * IMG_W + to_integer(dx) WHEN inside = '1' 
+           ELSE 0;
+  
+  addr <= std_logic_vector(to_unsigned(index, 10));
+  
+  --------------------------------------------------------------------
+  -- ROM (sin cambios)
+  --------------------------------------------------------------------
   u_rom : ENTITY work.bird_rom
     PORT MAP (
       clk     => clk,
       r_addr  => addr,
-      r_data  => color
+      r_data  => color_rom
     );
+  
 
-  -- Asignación del color y visibilidad
-  process(color, row, column, x_pos, y_pos)
-    variable x, y, x0, y0 : integer;
-  begin
-    x  := to_integer(unsigned(column));
-    y  := to_integer(unsigned(row));
-    x0 := to_integer(unsigned(x_pos));
-    y0 := to_integer(unsigned(y_pos));
-
-    if (x >= x0) and (x < x0 + IMG_W) and
-       (y >= y0) and (y < y0 + IMG_H) then
-      if (color = x"BBB") then
-        visible <= '0';  -- color transparente
-      else
-        visible <= '1';
-      end if;
-    else
-      visible <= '0';
-    end if;
-
-    pixel_data <= color;
-  end process;
+  pixel_data <= color_rom;
+  
+  visible <= '1' WHEN (enable = '1') AND           -- ← MODIFICADO
+                      (inside = '1') AND 
+                      (color_rom /= TRANSP)
+             ELSE '0';
 
 END ARCHITECTURE;
---------------------------------------------------------------

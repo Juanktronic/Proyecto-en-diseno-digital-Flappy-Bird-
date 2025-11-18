@@ -35,11 +35,11 @@ ARCHITECTURE rtl OF scores_sprite IS
   CONSTANT SCORE_X      : integer := 270;  -- score arriba centrado
   CONSTANT SCORE_Y      : integer := 30;
 
-  CONSTANT BEST_SCORE_X : integer := 469;  -- best score lado derecho
+  CONSTANT BEST_SCORE_X : integer := 475;  -- best score lado derecho
   CONSTANT BEST_SCORE_Y : integer := 228;
 
-  CONSTANT LAST_SCORE_X : integer := 469;  -- último score debajo de best
-  CONSTANT LAST_SCORE_Y : integer := 272;  -- BEST_SCORE_Y + algo
+  CONSTANT LAST_SCORE_X : integer := 475;  -- último score debajo de best
+  CONSTANT LAST_SCORE_Y : integer := 300;  -- BEST_SCORE_Y + algo
 
   -- Posición de pixel actual
   SIGNAL x_curr, y_curr : integer;
