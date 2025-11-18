@@ -22,6 +22,29 @@ ARCHITECTURE rtl OF game IS
   SIGNAL bird_y_pos    : std_logic_vector(9 DOWNTO 0);
   SIGNAL debounced_btn : std_logic;
   SIGNAL collision     : std_logic := '0';
+  -- Señales para "BEST"
+  SIGNAL best_text_rgb     : std_logic_vector(11 DOWNTO 0);
+  SIGNAL best_text_visible : std_logic;
+  SIGNAL best_text_addr    : std_logic_vector(11 DOWNTO 0);
+  SIGNAL best_rom_data     : std_logic_vector(3 DOWNTO 0);
+  
+  -- Señales para "SCORE:" (superior)
+  SIGNAL score_text1_rgb     : std_logic_vector(11 DOWNTO 0);
+  SIGNAL score_text1_visible : std_logic;
+  SIGNAL score_text1_addr    : std_logic_vector(12 DOWNTO 0);
+  SIGNAL score_text1_data    : std_logic_vector(3 DOWNTO 0);
+  
+  -- Señales para "LAST"
+  SIGNAL last_text_rgb     : std_logic_vector(11 DOWNTO 0);
+  SIGNAL last_text_visible : std_logic;
+  SIGNAL last_text_addr    : std_logic_vector(11 DOWNTO 0);
+  SIGNAL last_rom_data     : std_logic_vector(3 DOWNTO 0);
+  
+  -- Señales para "SCORE:" (inferior)
+  SIGNAL score_text2_rgb     : std_logic_vector(11 DOWNTO 0);
+  SIGNAL score_text2_visible : std_logic;
+  SIGNAL score_text2_addr    : std_logic_vector(12 DOWNTO 0);
+  SIGNAL score_text2_data    : std_logic_vector(3 DOWNTO 0);
   
   -- Máquina de estados
   TYPE state IS (Start, Playing, GameOver);
@@ -38,7 +61,8 @@ ARCHITECTURE rtl OF game IS
   CONSTANT ST_START    : std_logic_vector(1 DOWNTO 0) := "00";
   CONSTANT ST_PLAYING  : std_logic_vector(1 DOWNTO 0) := "01";
   CONSTANT ST_GAMEOVER : std_logic_vector(1 DOWNTO 0) := "10";
-  SIGNAL start_state : std_logic;
+  SIGNAL start_state   : std_logic;
+  SIGNAL gameover_state: std_logic;
 
   
    -- Constantes para posición del score
@@ -56,6 +80,27 @@ ARCHITECTURE rtl OF game IS
   
   SIGNAL R_s, G_s, B_s : std_logic_vector(3 DOWNTO 0) := (others=>'0');
   CONSTANT BIRD_X : integer := 100;
+  -- Posiciones de los textos BEST/LAST/SCORE
+  CONSTANT BEST_X      : integer := 220;
+  CONSTANT BEST_Y      : integer := 195;
+  CONSTANT BEST_W      : integer := 100;
+  
+  CONSTANT SCORE1_X    : integer := 330;
+  CONSTANT SCORE1_Y    : integer := 195;
+  CONSTANT SCORE1_W    : integer := 130;
+  
+  CONSTANT BEST_NUM_X  : integer := 475;
+  CONSTANT BEST_NUM_Y  : integer := 198;
+  
+  CONSTANT LAST_X      : integer := 220;
+  CONSTANT LAST_Y      : integer := 265;
+  CONSTANT LAST_W      : integer := 100;
+  
+  CONSTANT SCORE2_X    : integer := 330;
+  CONSTANT SCORE2_Y    : integer := 265;
+  
+  CONSTANT LAST_NUM_X  : integer := 475;
+  CONSTANT LAST_NUM_Y  : integer := 268;
 
   SIGNAL px_x   : std_logic_vector(10 DOWNTO 0);
   SIGNAL px_c   : std_logic_vector(9 DOWNTO 0);
@@ -63,6 +108,10 @@ ARCHITECTURE rtl OF game IS
   SIGNAL pipe_rgb : std_logic_vector(11 DOWNTO 0);
   SIGNAL pipe_vis : std_logic;
   SIGNAL pipe_gen : std_logic;
+  SIGNAL floor_rgb     : std_logic_vector(11 DOWNTO 0);
+  SIGNAL floor_visible : std_logic;
+  SIGNAL gameover_rgb     : std_logic_vector(11 DOWNTO 0);
+  SIGNAL gameover_visible : std_logic;
   
 BEGIN
   u_pll : ENTITY work.PLL_25_175Mhz
@@ -119,19 +168,117 @@ BEGIN
     score      => score_value
   );
 
-	-- Score Display: Shows the score on screen
+
   u_scores : ENTITY work.scores_sprite
     PORT MAP(
       clk         => PLLclk,
       row         => row,
       column      => column,
-      score_cur   => score_value,   -- el mismo de score_counter
-      best_score  => best_score,    -- el que sale de score_counter
-      start_state => start_state,   -- tu señal de máquina de estados
+      score_cur   => score_value,   
+      best_score  => best_score,   
+      start_state => start_state,   
       pixel_data  => score_rgb,
       visible     => score_visible
     );
-
+-- ROM para "BEST"
+  u_rom_best : ENTITY work.rom_best
+    PORT MAP(
+      clk    => PLLclk,
+      r_addr => best_text_addr,
+      r_data => best_rom_data
+    );
+  
+  -- Sprite "BEST"
+  u_best_text : ENTITY work.first_text_sprite
+    GENERIC MAP(
+      X_POS => BEST_X,
+      Y_POS => BEST_Y
+    )
+    PORT MAP(
+      clk        => PLLclk,
+      row        => row,
+      column     => column,
+      enable     => start_state,
+      rom_data   => best_rom_data,
+      rom_addr   => best_text_addr,
+      pixel_data => best_text_rgb,
+      visible    => best_text_visible
+    );
+  
+  -- ROM para "SCORE:" (compartida)
+  u_rom_score1 : ENTITY work.rom_score1
+    PORT MAP(
+      clk    => PLLclk,
+      r_addr => score_text1_addr,
+      r_data => score_text1_data
+    );
+  
+  -- Sprite "SCORE:" (superior)
+  u_score_text1 : ENTITY work.second_text_sprite
+    GENERIC MAP(
+      X_POS => SCORE1_X,
+      Y_POS => SCORE1_Y
+    )
+    PORT MAP(
+      clk        => PLLclk,
+      row        => row,
+      column     => column,
+      enable     => start_state,
+      rom_data   => score_text1_data,
+      rom_addr   => score_text1_addr,
+      pixel_data => score_text1_rgb,
+      visible    => score_text1_visible
+    );
+  
+  -- ROM para "LAST"
+  u_rom_last : ENTITY work.rom_last
+    PORT MAP(
+      clk    => PLLclk,
+      r_addr => last_text_addr,
+      r_data => last_rom_data
+    );
+  
+  -- Sprite "LAST"
+  u_last_text : ENTITY work.first_text_sprite
+    GENERIC MAP(
+      X_POS => LAST_X,
+      Y_POS => LAST_Y
+    )
+    PORT MAP(
+      clk        => PLLclk,
+      row        => row,
+      column     => column,
+      enable     => start_state,
+      rom_data   => last_rom_data,
+      rom_addr   => last_text_addr,
+      pixel_data => last_text_rgb,
+      visible    => last_text_visible
+    );
+  
+  -- ROM para "SCORE:" (inferior)
+  u_rom_score2 : ENTITY work.rom_score1
+    PORT MAP(
+      clk    => PLLclk,
+      r_addr => score_text2_addr,
+      r_data => score_text2_data
+    );
+  
+  -- Sprite "SCORE:" (inferior)
+  u_score_text2 : ENTITY work.second_text_sprite
+    GENERIC MAP(
+      X_POS => SCORE2_X,
+      Y_POS => SCORE2_Y
+    )
+    PORT MAP(
+      clk        => PLLclk,
+      row        => row,
+      column     => column,
+      enable     => start_state,
+      rom_data   => score_text2_data,
+      rom_addr   => score_text2_addr,
+      pixel_data => score_text2_rgb,
+      visible    => score_text2_visible
+    );
 
   bird_x_pos <= std_logic_vector(to_unsigned(BIRD_X, 10));
 
@@ -170,6 +317,25 @@ BEGIN
       visible    => pipe_vis
     );
 
+	 u_floor : ENTITY work.floor_sprite
+  PORT MAP(
+    clk        => PLLclk,
+    row        => row,
+    column     => column,
+    pixel_data => floor_rgb,
+    visible    => floor_visible
+  );
+  
+  u_gameover : ENTITY work.game_over_sprite
+  
+  PORT MAP(
+    clk        => PLLclk,
+    row        => row,
+    column     => column,
+    pixel_data => gameover_rgb,
+    visible    => gameover_visible
+  );
+
   u_collision : ENTITY work.collision_mngr
     PORT MAP(
       clk           => PLLclk,
@@ -180,7 +346,7 @@ BEGIN
       collision_frm => collision
     );
 
-  u_color_mngr : ENTITY work.color_mngr
+u_color_mngr : ENTITY work.color_mngr
   GENERIC MAP(
     SPR_LAT => 1,
     BIRD_W  => 34,
@@ -197,13 +363,27 @@ BEGIN
     pipe_rgb            => pipe_rgb,
     pipe_visible        => pipe_vis,
     pipe_active         => px_act,
-    score_rgb           => score_rgb,      -- del scores_sprite
-    score_visible       => score_visible,  -- del scores_sprite
+    floor_rgb           => floor_rgb,
+    floor_visible       => floor_visible,
+    gameover_rgb        => gameover_rgb,
+    gameover_visible    => gameover_visible,
+    score_rgb           => score_rgb,
+    score_visible       => score_visible,
+    best_text_rgb       => best_text_rgb,
+    best_text_visible   => best_text_visible,
+    score_text1_rgb     => score_text1_rgb,
+    score_text1_visible => score_text1_visible,
+    last_text_rgb       => last_text_rgb,
+    last_text_visible   => last_text_visible,
+    score_text2_rgb     => score_text2_rgb,
+    score_text2_visible => score_text2_visible,
+    start               => start_state,
+	 gameover            => gameover_state,
     R                   => R_s,
     G                   => G_s,
     B                   => B_s
   );
-
+  
   PROCESS(PLLclk)
   BEGIN
     IF rising_edge(PLLclk) THEN
@@ -215,6 +395,7 @@ BEGIN
   PROCESS(debounced_btn, collision, pr_state)
   BEGIN
     start_state <= '0';
+	 gameover_state <= '0';
     nx_state <= pr_state;
     CASE pr_state IS
       WHEN Start =>
@@ -232,7 +413,7 @@ BEGIN
 				nx_state <= Playing;
 			END IF;
       WHEN GameOver =>
-			
+			gameover_state <= '1';
 			IF debounced_btn = '1' THEN
 				nx_state <= Start;
 			ELSE
